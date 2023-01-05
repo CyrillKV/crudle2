@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import { SECRET_KEY } from '../middleware/auth';
 
 
-export async function register (user: DocumentDefinition<UserDocument>): Promise<void> {
+export async function registerUser (user: DocumentDefinition<UserDocument>): Promise<void> {
   try {
     await UserModel.create(user);
   } catch (error) {
@@ -14,7 +14,7 @@ export async function register (user: DocumentDefinition<UserDocument>): Promise
   }
 };
 
-export async function login (user: DocumentDefinition<UserDocument>) {
+export async function loginUser (user: DocumentDefinition<UserDocument>) {
   try {
     const foundUser = await UserModel.findOne({ email: user.email });
 
@@ -22,13 +22,13 @@ export async function login (user: DocumentDefinition<UserDocument>) {
       throw new Error('Email is not registered!');
     }
 
-    const isMatch = bcrypt.compareSync(user.password, foundUser.password);
+    const isMatch = await bcrypt.compare(user.password, foundUser.password);
 
     if (isMatch) {
-      const token = jwt.sign({ _id: foundUser._id?.toString(), name: foundUser.name }, SECRET_KEY, { expiresIn: '2 day'});
-      return {user: { _id: user._id, name: user.name}, token: token};
+      const token = jwt.sign({ _id: foundUser._id?.toString(), name: foundUser.name }, SECRET_KEY, { expiresIn: '2 days'});
+      return {...user , token: token};
     } else {
-      throw new Error('Password is not correct!');
+      throw new Error(`Password is not correct! ${isMatch}`);
     }
 
   } catch (error) {
